@@ -1,0 +1,102 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract Degenvotingcontract {
+
+    uint256 public totalSupplyOfVotes;
+    address public owner;
+    string public name = "contributor";
+    string public symbol = "CONT";
+
+    struct Voter {
+        uint256 balance;
+        bool exists;
+    }
+
+    mapping(address => Voter) public voters;
+
+    event VotesMinted(address indexed to, uint256 votes);
+    event VotesBurned(address indexed from, uint256 votes);
+    event VotesTransferred(address indexed from, address indexed to, uint256 votes);
+    event VotesRedeemed(address indexed from, uint256 votes, uint256 rewardLevel);
+
+    modifier onlyOwner() {
+        require(msg.sender == owner, "Only the contract owner can perform this action.");
+        _;
+    }
+
+    // Constructor
+    constructor() {
+        owner = msg.sender;
+    }
+
+    // Minting votes function
+    function mint(address to, uint256 votes) public onlyOwner {
+        require(votes > 0, "Votes must be greater than 0.");
+
+        if (!voters[to].exists) {
+            voters[to].exists = true;
+        }
+
+        voters[to].balance += votes;
+        totalSupplyOfVotes += votes;
+
+        emit VotesMinted(to, votes);
+    }
+
+    // Burning votes function
+    function burn(uint256 votes) public {
+        require(votes <= voters[msg.sender].balance, "Not enough votes to burn.");
+
+        voters[msg.sender].balance -= votes;
+        totalSupplyOfVotes -= votes;
+
+        emit VotesBurned(msg.sender, votes);
+    }
+
+    // Transferring votes function
+    function transfer(address to, uint256 votes) public {
+        require(votes <= voters[msg.sender].balance, "Not enough votes to transfer.");
+        require(to != address(0), "Cannot transfer votes to the zero address.");
+
+        voters[msg.sender].balance -= votes;
+
+        if (!voters[to].exists) {
+            voters[to].exists = true;
+        }
+
+        voters[to].balance += votes;
+
+        emit VotesTransferred(msg.sender, to, votes);
+    }
+
+    // Redeeming votes function
+    function redeem(uint256 votes, uint256 rewardLevel) public {
+        require(rewardLevel >= 1 && rewardLevel <= 3, "Invalid reward level.");
+
+        uint256 requiredVotes;
+
+        if (rewardLevel == 1) {
+            requiredVotes = 20;
+        } else if (rewardLevel == 2) {
+            requiredVotes = 80;
+        } else if (rewardLevel == 3) {
+            requiredVotes = 140;
+        } else {
+            revert("Invalid reward level");
+        }
+
+        require(votes >= requiredVotes, "Insufficient votes for the selected reward level.");
+        require(voters[msg.sender].balance >= votes, "Not enough votes to redeem.");
+
+        voters[msg.sender].balance -= votes;
+        totalSupplyOfVotes -= votes;
+
+        emit VotesRedeemed(msg.sender, votes, rewardLevel);
+    }
+
+    // Check balance of votes for an address
+    function balanceOf(address account) public view returns (uint256) {
+        return voters[account].balance;
+    }
+}
