@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-contract Degenvotingcontract {
+contract Degevotingcontract {
 
     uint256 public totalSupplyOfVotes;
     address public owner;
-    string public name = "contributor";
-    string public symbol = "CONT";
+    string public name = "voter";
+    string public symbol = "VOTE";
 
     struct Voter {
         uint256 balance;
